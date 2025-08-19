@@ -10,7 +10,10 @@ import fnmatch
 import os
 import re
 
-import scandir
+try:
+    from os import scandir
+except ImportError:
+    from scandir import scandir
 
 from django.core.exceptions import ValidationError
 from django.utils.functional import cached_property
@@ -22,11 +25,11 @@ from .apps import PootleFSConfig
 
 
 PATH_MAPPING = (
-    (".", "\."),
-    ("<language_code>", "(?P<language_code>[\w\@\-\.]*)"),
-    ("<filename>", "(?P<filename>[\w\-\.]*)"),
+    (".", r"\."),
+    ("<language_code>", r"(?P<language_code>[\w\@\-\.]*)"),
+    ("<filename>", r"(?P<filename>[\w\-\.]*)"),
     ("/<dir_path>/", "/<dir_path>"),
-    ("<dir_path>", "(?P<dir_path>[\w\/\-]*?)"))
+    ("<dir_path>", r"(?P<dir_path>[\w\/\-]*?)"))
 
 DEFAULT_EXTENSIONS = ("po", "pot")
 
@@ -203,9 +206,9 @@ class TranslationMappingValidator(object):
 
     def validate_path(self):
         if os.path.sep == "\\":
-            bad_chars = re.search("[^\w\\\:\-\.]+", self.stripped_path)
+            bad_chars = re.search(r"[^\w\\\:\-\.]+", self.stripped_path)
         else:
-            bad_chars = re.search("[^\w\/\-\.]+", self.stripped_path)
+            bad_chars = re.search(r"[^\w\/\-\.]+", self.stripped_path)
         if bad_chars:
             raise ValidationError(
                 "Invalid character in translation_mapping '%s'"

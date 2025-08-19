@@ -8,7 +8,7 @@
 
 import collections
 
-from jsonfield.fields import JSONField
+from django.db import models
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -41,12 +41,11 @@ class AbstractConfig(models.Model):
         blank=False,
         null=False,
         db_index=True)
-    value = JSONField(
+    value = models.JSONField(
         'Configuration value',
-        default="",
+        default=dict,
         blank=True,
-        null=False,
-        load_kwargs={'object_pairs_hook': collections.OrderedDict})
+        null=False)
 
     objects = ConfigManager.from_queryset(ConfigQuerySet)()
 

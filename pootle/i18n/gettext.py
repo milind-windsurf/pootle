@@ -31,7 +31,7 @@ def _format_translation(message, variables=None):
 
 
 def ugettext(message, variables=None):
-    return _format_translation(_trans.ugettext(message), variables)
+    return _format_translation(_trans.gettext(message), variables)
 
 
 def gettext(message, variables=None):
@@ -39,7 +39,7 @@ def gettext(message, variables=None):
 
 
 def ungettext(singular, plural, number, variables=None):
-    return _format_translation(_trans.ungettext(singular, plural, number),
+    return _format_translation(_trans.ngettext(singular, plural, number),
                                variables)
 
 

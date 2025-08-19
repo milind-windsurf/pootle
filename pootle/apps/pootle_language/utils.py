@@ -6,7 +6,7 @@
 # or later license. See the LICENSE file for a copy of the license and the
 # AUTHORS file for copyright and authorship information.
 
-from translate.lang.data import get_language_iso_fullname
+from translate.lang.data import get_language as get_translate_language
 
 from django.conf import settings
 from django.utils.translation import get_language
@@ -67,8 +67,7 @@ class SiteLanguages(object):
         else:
             trans_func = lambda code, name: self.capitalize(
                 tr_lang(
-                    get_language_iso_fullname(code)
-                    or name))
+                    (get_translate_language(code) or (None, name))[1]))
         return {
             code: trans_func(code, name)
             for code, name

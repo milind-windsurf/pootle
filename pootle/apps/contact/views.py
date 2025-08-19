@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.generic import TemplateView
 
-from contact_form.views import ContactFormView as OriginalContactFormView
+from django_contact_form.views import ContactFormView as OriginalContactFormView
 
 from pootle.core.views.mixins import AjaxResponseMixin
 from pootle.i18n.gettext import ugettext_lazy as _

@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from pootle.core.browser import (
     make_language_item, make_project_list_item, make_xlanguage_item)

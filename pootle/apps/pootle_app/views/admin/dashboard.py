@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.shortcuts import render
 
-from django_rq.queues import get_failed_queue, get_queue
+from django_rq.queues import get_queue
 from django_rq.workers import Worker
 
 from pootle.core.decorators import admin_required
@@ -45,7 +45,6 @@ def server_stats():
 
 def rq_stats():
     queue = get_queue()
-    failed_queue = get_failed_queue()
     try:
         workers = Worker.all(queue.connection)
     except ConnectionError:
@@ -63,7 +62,7 @@ def rq_stats():
 
     result = {
         'job_count': queue.count,
-        'failed_job_count': failed_queue.count,
+        'failed_job_count': len(queue.failed_job_registry),
         'is_running': is_running,
         'status_msg': status_msg,
     }

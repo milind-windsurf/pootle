@@ -108,8 +108,7 @@ def init_settings(settings_filepath, template_filename,
 
     with open(settings_filepath, 'w') as settings:
         with open(template_filename) as template:
-            settings.write(
-                (template.read().decode("utf8") % context).encode("utf8"))
+            settings.write(template.read() % context)
 
 
 def init_command(parser, args):
@@ -213,7 +212,7 @@ def set_sync_mode(noinput=False):
                 exit(2)
 
     # Update settings to set queues to ASYNC = False.
-    for q in settings.RQ_QUEUES.itervalues():
+    for q in settings.RQ_QUEUES.values():
         q['ASYNC'] = False
 
 

@@ -14,7 +14,7 @@ from allauth.account.adapter import get_adapter
 
 
 @pytest.mark.django_db
-def test_account_adapter_unicode():
+def test_account_adapter_str():
     adapter = get_adapter()
     username = 'ascii'
     assert username == adapter.clean_username(username)

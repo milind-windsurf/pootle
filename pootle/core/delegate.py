@@ -10,9 +10,9 @@
 from pootle.core.plugin.delegate import Getter, Provider
 
 
-config = Getter(providing_args=["instance"])
-search_backend = Getter(providing_args=["instance"])
-lang_mapper = Getter(providing_args=["instance"])
+config = Getter()
+search_backend = Getter()
+lang_mapper = Getter()
 state = Getter()
 response = Getter()
 check_updater = Getter()
@@ -56,8 +56,8 @@ stopwords = Getter()
 text_comparison = Getter()
 panels = Provider()
 
-serializers = Provider(providing_args=["instance"])
-deserializers = Provider(providing_args=["instance"])
+serializers = Provider()
+deserializers = Provider()
 subcommands = Provider()
 uniqueid = Getter()
 unitid = Provider()
@@ -65,7 +65,7 @@ url_patterns = Provider()
 wordcount = Getter()
 
 # view.context_data
-context_data = Provider(providing_args=["view", "context"])
+context_data = Provider()
 
 upstream = Provider()
 versioned = Getter()

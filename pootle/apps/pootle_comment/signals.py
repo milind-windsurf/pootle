@@ -9,4 +9,4 @@
 from django.dispatch import Signal
 
 
-comment_was_saved = Signal(providing_args=["comment"], use_caching=True)
+comment_was_saved = Signal(use_caching=True)

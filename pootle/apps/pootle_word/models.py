@@ -18,8 +18,8 @@ class UnitStem(models.Model):
     class Meta(AbstractStem.Meta):
         unique_together = ["stem", "unit"]
 
-    stem = models.ForeignKey("Stem")
-    unit = models.ForeignKey(Unit)
+    stem = models.ForeignKey("Stem", on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
 
 class Stem(AbstractStem):
@@ -32,7 +32,7 @@ class Stem(AbstractStem):
     class Meta(AbstractStem.Meta):
         db_table = "pootle_word_stem"
 
-    def __unicode__(self):
+    def __str__(self):
         return (
             "\"%s\", units: %s"
             % (self.root,

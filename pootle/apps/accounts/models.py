@@ -23,7 +23,7 @@ from django.utils.encoding import force_bytes
 from django.utils.functional import cached_property
 
 from allauth.account.models import EmailAddress
-from allauth.account.utils import sync_user_email_addresses
+from allauth.account.utils import cleanup_email_addresses
 
 from pootle.core.views.display import ActionDisplay
 from pootle.i18n import formatter
@@ -251,7 +251,7 @@ class User(AbstractBaseUser):
                 email__iexact=old_email,
             ).update(email=self.email)
         else:
-            sync_user_email_addresses(self)
+            cleanup_email_addresses(self)
 
     def gravatar_url(self, size=80):
         if not self.email_hash:

@@ -7,7 +7,7 @@
 # AUTHORS file for copyright and authorship information.
 
 import re
-import urlparse
+from urllib.parse import urlparse
 from collections import OrderedDict
 
 from django import forms
@@ -139,7 +139,7 @@ class ProjectForm(forms.ModelForm):
             default=self.cleaned_data["fs_mapping"])
         lang_mapping = dict(
             (v, k) for k, v
-            in project.config.get("pootle.core.lang_mapping", {}).iteritems())
+            in project.config.get("pootle.core.lang_mapping", {}).items())
         if self.cleaned_data["template_name"] in ["templates", ""]:
             if "templates" in lang_mapping:
                 del lang_mapping["templates"]
@@ -147,7 +147,7 @@ class ProjectForm(forms.ModelForm):
             lang_mapping["templates"] = self.cleaned_data["template_name"]
         project.config["pootle.core.lang_mapping"] = dict(
             (v, k) for k, v
-            in lang_mapping.iteritems())
+            in lang_mapping.items())
         return project
 
 
@@ -185,7 +185,7 @@ class UserForm(forms.ModelForm):
     def clean_linkedin(self):
         url = self.cleaned_data['linkedin']
         if url != '':
-            parsed = urlparse.urlparse(url)
+            parsed = urlparse(url)
             if 'linkedin.com' not in parsed.netloc or parsed.path == '/':
                 raise forms.ValidationError(
                     _('Please enter a valid LinkedIn user profile URL.')

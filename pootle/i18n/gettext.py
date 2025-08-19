@@ -11,7 +11,7 @@ from translate.lang import data as langdata
 from django.conf import settings
 from django.utils import translation
 from django.utils.functional import lazy
-from django.utils.translation import _trans
+from django.utils import translation as _trans
 
 
 def _format_translation(message, variables=None):
@@ -31,7 +31,7 @@ def _format_translation(message, variables=None):
 
 
 def ugettext(message, variables=None):
-    return _format_translation(_trans.ugettext(message), variables)
+    return _format_translation(_trans.gettext(message), variables)
 
 
 def gettext(message, variables=None):
@@ -39,7 +39,7 @@ def gettext(message, variables=None):
 
 
 def ungettext(singular, plural, number, variables=None):
-    return _format_translation(_trans.ungettext(singular, plural, number),
+    return _format_translation(_trans.ngettext(singular, plural, number),
                                variables)
 
 
@@ -48,9 +48,9 @@ def ngettext(singular, plural, number, variables=None):
 
 
 gettext_lazy = lazy(gettext, str)
-ugettext_lazy = lazy(ugettext, unicode)
+ugettext_lazy = lazy(ugettext, str)
 ngettext_lazy = lazy(ngettext, str)
-ungettext_lazy = lazy(ungettext, unicode)
+ungettext_lazy = lazy(ungettext, str)
 
 
 def tr_lang(language_name):

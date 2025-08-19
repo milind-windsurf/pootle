@@ -9,4 +9,4 @@
 from pootle.core.plugin.delegate import Getter
 
 
-comment_should_not_be_saved = Getter(providing_args=["instance", "comment"])
+comment_should_not_be_saved = Getter()

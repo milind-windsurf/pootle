@@ -9,7 +9,7 @@
 from django import forms
 from django.conf import settings
 
-from contact_form.forms import ContactForm as OriginalContactForm
+from django_contact_form.forms import ContactForm as OriginalContactForm
 
 from pootle.core.forms import MathCaptchaForm
 from pootle.core.mail import send_mail

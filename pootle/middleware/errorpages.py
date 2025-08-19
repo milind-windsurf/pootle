@@ -18,7 +18,7 @@ from django.http import Http404, HttpResponseForbidden, HttpResponseServerError
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 try:
     from raven.contrib.django.models import sentry_exception_handler
@@ -48,7 +48,7 @@ def log_exception(request, exception, tb):
         except Exception:
             request_repr = "Request repr() unavailable"
 
-        msg_args = (unicode(exception.args[0]), tb,
+        msg_args = (str(exception.args[0]), tb,
                     request_repr)
         message = "%s\n\n%s\n\n%s" % msg_args
         mail_admins(subject, message, fail_silently=True)
@@ -66,7 +66,7 @@ def handle_exception(request, exception, template_name):
 
     log_exception(request, exception, tb)
 
-    msg = force_text(exception)
+    msg = force_str(exception)
 
     if request.is_ajax():
         return JsonResponseServerError({'msg': msg})
@@ -92,7 +92,7 @@ class ErrorPagesMiddleware(MiddlewareMixin):
     """Friendlier error pages."""
 
     def process_exception(self, request, exception):
-        msg = force_text(exception)
+        msg = force_str(exception)
         if isinstance(exception, Http404):
             if request.is_ajax():
                 return JsonResponseNotFound({'msg': msg})

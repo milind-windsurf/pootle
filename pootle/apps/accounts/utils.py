@@ -15,7 +15,7 @@ from django.core.validators import ValidationError, validate_email
 from django.db.models import Count
 
 from allauth.account.models import EmailAddress
-from allauth.account.utils import sync_user_email_addresses
+from allauth.account.utils import cleanup_email_addresses
 
 from pootle.core.contextmanagers import keep_data
 from pootle.core.delegate import score_updater
@@ -423,7 +423,7 @@ def verify_user(user):
             # already verified
             raise ValueError("User '%s' is already verified" % user.username)
 
-    sync_user_email_addresses(user)
+    cleanup_email_addresses(user)
     email_address = (EmailAddress.objects
                      .filter(user=user, email__iexact=user.email)
                      .order_by("primary")).first()

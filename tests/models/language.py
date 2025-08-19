@@ -8,7 +8,7 @@
 
 import pytest
 
-from translate.lang.data import get_language_iso_fullname
+from translate.lang.data import get_language as get_translate_language
 
 from django.utils import translation
 
@@ -44,7 +44,7 @@ def test_language_display_name(english):
     # as fullname is not set - this should default to the pycountry name
     assert (
         english.name
-        == get_language_iso_fullname(english.code))
+        == (get_translate_language(english.code) or (None, english.code))[1])
 
     # lets give english a custom name in db
     english.fullname = "English (bristol twang)"
@@ -62,7 +62,7 @@ def test_language_display_name(english):
         assert (
             english.name
             == site_languages.get().capitalize(
-                tr_lang(get_language_iso_fullname(english.code))))
+                tr_lang((get_translate_language(english.code) or (None, english.code))[1])))
 
     with translation.override("en-GB"):
         # as request lang is also a dialect of english

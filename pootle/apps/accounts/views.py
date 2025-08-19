@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 from allauth.account.views import LoginView
-from allauth.socialaccount.helpers import _add_social_account
+from allauth.socialaccount.helpers import complete_social_login
 from allauth.socialaccount.models import SocialLogin
 
 from .forms import SocialVerificationForm
@@ -48,4 +48,4 @@ class SocialVerificationView(LoginView):
     def form_valid(self, form):
         # Authentication is OK, log in and request to connect accounts
         form.login(self.request)
-        return _add_social_account(self.request, self.sociallogin)
+        return complete_social_login(self.request, self.sociallogin)

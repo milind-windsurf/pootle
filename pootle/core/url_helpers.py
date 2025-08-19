@@ -8,8 +8,7 @@
 
 import os
 import re
-import urllib
-import urlparse
+from urllib.parse import urlparse, urljoin as urllib_urljoin, urlunparse, quote_plus
 
 from django.urls import reverse
 
@@ -98,7 +97,7 @@ def get_editor_filter(state=None, check=None, user=None, month=None,
     elif check_category is not None:
         filter_string = '#filter=checks&category=%s' % check_category
     elif search is not None:
-        filter_string = '#search=%s' % urllib.quote_plus(search)
+        filter_string = '#search=%s' % quote_plus(search)
         if sfields is not None:
             if not isinstance(sfields, list):
                 sfields = [sfields]
@@ -128,7 +127,7 @@ def get_previous_url(request):
     referer_url = request.META.get('HTTP_REFERER', '')
 
     if referer_url:
-        parsed_referer = urlparse.urlparse(referer_url)
+        parsed_referer = urlparse(referer_url)
         referer_host = parsed_referer.netloc
         referer_path = parsed_referer.path
         referer_query = parsed_referer.query
@@ -152,8 +151,8 @@ def urljoin(base, *url_parts):
     """Joins URL parts with a `base` and removes any duplicated slashes in
     `url_parts`.
     """
-    new_url = urlparse.urljoin(base, '/'.join(url_parts))
-    new_url = list(urlparse.urlparse(new_url))
+    new_url = urllib_urljoin(base, '/'.join(url_parts))
+    new_url = list(urlparse(new_url))
     new_url[2] = re.sub('/{2,}', '/', new_url[2])
 
-    return urlparse.urlunparse(new_url)
+    return urlunparse(new_url)

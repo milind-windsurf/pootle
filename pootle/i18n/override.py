@@ -13,7 +13,8 @@ import os
 from translate.lang import data
 
 from django.utils import translation
-from django.utils.translation import LANGUAGE_SESSION_KEY, trans_real
+from django.utils.translation import trans_real
+from django.conf import settings
 
 from pootle.i18n import gettext
 
@@ -27,7 +28,7 @@ def find_languages(locale_path):
     for lang in dirs:
         if (data.langcode_re.match(lang) and
             os.path.isdir(os.path.join(locale_path, lang))):
-            langs.append((trans_real.to_language(lang),
+            langs.append((lang,
                           data.languages.get(lang, (lang,))[0]))
     return langs
 
@@ -54,7 +55,7 @@ def get_language_supported(lang_code, supported):
 def get_lang_from_session(request, supported):
     if not hasattr(request, 'session'):
         return None
-    lang_code = request.session.get(LANGUAGE_SESSION_KEY, None)
+    lang_code = request.session.get(settings.LANGUAGE_COOKIE_NAME, None)
     if not lang_code:
         return None
     return get_language_supported(lang_code, supported)

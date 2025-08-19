@@ -7,7 +7,7 @@
 # AUTHORS file for copyright and authorship information.
 
 from django.core.management.base import BaseCommand, CommandError
-from django.utils.lru_cache import lru_cache
+from functools import lru_cache
 
 from pootle.core.exceptions import MissingPluginError, NotConfiguredError
 from pootle_fs.display import ResponseDisplay

@@ -43,10 +43,6 @@ DEFAULT_SETTINGS_PATH = ":".join(
      HOME_SETTINGS_PATH,
      VENV_SETTINGS_PATH])
 
-# Python 2+3 support for input()
-if sys.version_info[0] < 3:
-    input = raw_input
-
 
 def add_help_to_parser(parser):
     parser.add_help = True
@@ -108,8 +104,7 @@ def init_settings(settings_filepath, template_filename,
 
     with open(settings_filepath, 'w') as settings:
         with open(template_filename) as template:
-            settings.write(
-                (template.read().decode("utf8") % context).encode("utf8"))
+            settings.write(template.read() % context)
 
 
 def init_command(parser, args):
@@ -213,7 +208,7 @@ def set_sync_mode(noinput=False):
                 exit(2)
 
     # Update settings to set queues to ASYNC = False.
-    for q in settings.RQ_QUEUES.itervalues():
+    for q in settings.RQ_QUEUES.values():
         q['ASYNC'] = False
 
 

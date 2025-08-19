@@ -9,5 +9,5 @@
 from pootle.core.plugin.delegate import Getter
 
 
-config_should_not_be_set = Getter(providing_args=["instance", "key", "value"])
-config_should_not_be_appended = Getter(providing_args=["instance", "key", "value"])
+config_should_not_be_set = Getter()
+config_should_not_be_appended = Getter()

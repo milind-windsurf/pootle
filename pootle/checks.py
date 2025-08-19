@@ -588,16 +588,10 @@ def check_mysql_timezones(app_configs=None, **kwargs):
 @checks.register()
 def check_unsupported_python(app_configs=None, **kwargs):
     errors = []
-    if sys.version_info >= (3, 0):
+    if sys.version_info < (3, 8):
         errors.append(checks.Critical(
-            _("Pootle does not yet support Python 3."),
-            hint=_("Use a Python 2.7 virtualenv."),
+            _("Pootle requires Python 3.8 or later."),
+            hint=_("Use a Python 3.8+ virtualenv."),
             id="pootle.C023",
-        ))
-    if sys.version_info < (2, 7):
-        errors.append(checks.Critical(
-            _("Pootle no longer supports Python versions older than 2.7"),
-            hint=_("Use a Python 2.7 virtualenv."),
-            id="pootle.C024",
         ))
     return errors

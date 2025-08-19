@@ -72,7 +72,7 @@ class QualityCheck(AbstractQualityCheck):
         abstract = False
         db_table = "pootle_store_qualitycheck"
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @property
@@ -141,7 +141,7 @@ class Suggestion(AbstractSuggestion):
 
     # # # # # # # # # # # # # #  Methods # # # # # # # # # # # # # # # # # # #
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.target)
 
 
@@ -212,7 +212,7 @@ class Unit(AbstractUnit):
 
     # # # # # # # # # # # # # #  Methods # # # # # # # # # # # # # # # # # # #
 
-    def __unicode__(self):
+    def __str__(self):
         # FIXME: consider using unit id instead?
         return str(self.source)
 
@@ -832,8 +832,8 @@ class Store(AbstractStore):
     def __init__(self, *args, **kwargs):
         super(Store, self).__init__(*args, **kwargs)
 
-    def __unicode__(self):
-        return unicode(self.pootle_path)
+    def __str__(self):
+        return str(self.pootle_path)
 
     def __str__(self):
         return str(self.syncer.convert())

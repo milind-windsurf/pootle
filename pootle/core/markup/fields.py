@@ -57,11 +57,11 @@ class Markup(object):
 
         return rendered
 
-    def __unicode__(self):
+    def __str__(self):
         try:
             return mark_safe(clean_html(self.rendered))
         except ParserError:
-            return u''
+            return ''
 
     def __nonzero__(self):
         return self.raw.strip() != '' and self.raw is not None

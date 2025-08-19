@@ -43,9 +43,6 @@ DEFAULT_SETTINGS_PATH = ":".join(
      HOME_SETTINGS_PATH,
      VENV_SETTINGS_PATH])
 
-# Python 2+3 support for input()
-if sys.version_info[0] < 3:
-    input = raw_input
 
 
 def add_help_to_parser(parser):

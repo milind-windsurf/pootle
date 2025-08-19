@@ -835,9 +835,6 @@ class Store(AbstractStore):
     def __str__(self):
         return str(self.pootle_path)
 
-    def __str__(self):
-        return str(self.syncer.convert())
-
     def save(self, *args, **kwargs):
         self.pootle_path = self.parent.pootle_path + self.name
         self.tp_path = self.parent.tp_path + self.name

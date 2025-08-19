@@ -2,7 +2,7 @@
 
 # Note: also adjust pootle/constants::DJANGO_MINIMUM_REQUIRED_VERSION
 # and docs/releases/M.N.O.rst
-Django~=1.11.12  # rq.filter: <1.12
+Django~=4.2.0
 
 # Django apps
 django-allauth==0.35.0
@@ -25,7 +25,7 @@ diff-match-patch==20121119
 dirsync==2.2.3
 jsonfield==2.0.2
 # Note: also adjust pootle/checks::LXML_MINIMUM_REQUIRED_VERSION
-lxml>=4.2,<4.3
+lxml>=4.9,<5.0
 makeyfile==0.0.2
 pathlib==1.0.1
 python-dateutil==2.7.2
@@ -42,6 +42,6 @@ Markdown==2.6.11
 
 # Translate Toolkit
 # Note: also adjust pootle/checks::TTK_MINIMUM_REQUIRED_VERSION
-translate-toolkit==2.3.0
+translate-toolkit>=3.0.0
 # If you want to use Translate Toolkit 'master'
 #-e git+https://github.com/translate/translate.git#egg=translate-toolkit-2.2.5

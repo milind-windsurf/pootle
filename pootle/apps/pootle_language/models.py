@@ -8,7 +8,7 @@
 
 from collections import OrderedDict
 
-from translate.lang.data import get_language_iso_fullname
+from translate.lang.data import get_language
 
 from django.conf import settings
 from django.db import models
@@ -94,7 +94,8 @@ class Language(models.Model, TreeItem):
                 and server_code.matches(request_code)))
         if use_db_name:
             return self.fullname
-        iso_name = get_language_iso_fullname(self.code) or self.fullname
+        lang_data = get_language(self.code)
+        iso_name = lang_data[0] if lang_data else self.fullname
         return (
             site_langs.capitalize(tr_lang(iso_name))
             if iso_name
@@ -144,8 +145,8 @@ class Language(models.Model, TreeItem):
         self.specialchars = u"".join(
             OrderedDict([
                 ((specialchar
-                  if isinstance(specialchar, unicode)
-                  else specialchar.decode("unicode_escape")),
+                  if isinstance(specialchar, str)
+                  else specialchar),
                  None)
                 for specialchar
                 in self.specialchars]).keys())

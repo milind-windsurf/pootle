@@ -216,9 +216,6 @@ class Unit(AbstractUnit):
         # FIXME: consider using unit id instead?
         return str(self.source)
 
-    def __str__(self):
-        return str(self.convert())
-
     def __init__(self, *args, **kwargs):
         super(Unit, self).__init__(*args, **kwargs)
         self._rich_source = None

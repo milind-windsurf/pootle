@@ -44,7 +44,6 @@ DEFAULT_SETTINGS_PATH = ":".join(
      VENV_SETTINGS_PATH])
 
 
-
 def add_help_to_parser(parser):
     parser.add_help = True
     parser.add_argument("-h", "--help",

@@ -19,7 +19,7 @@ from django.template.defaultfilters import truncatechars
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.functional import cached_property
-from django.utils.http import urlquote
+from urllib.parse import quote as urlquote
 
 from pootle.core.delegate import (
     data_tool, format_syncers, format_updaters, frozen, states,

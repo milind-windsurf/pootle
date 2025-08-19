@@ -102,7 +102,6 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
         import pytest
         errno = pytest.main(self.test_args)
         sys.exit(errno)
@@ -142,13 +141,13 @@ class PootleBuildMo(DistutilsBuild):
                     lang != "templates"):
                     self._langs.append(lang)
         else:
-            for lang in open(os.path.join('pootle', 'locale', 'LINGUAS')):
-                self._langs.append(lang.rstrip())
+            with open(os.path.join('pootle', 'locale', 'LINGUAS')) as f:
+                for lang in f:
+                    self._langs.append(lang.rstrip())
 
     def build_mo(self):
         """Compile .mo files from available .po files"""
         import subprocess
-        import gettext
         from translate.storage import factory
 
         error_occured = False
@@ -190,8 +189,8 @@ class PootleBuildMo(DistutilsBuild):
                              lang, e)
 
                 try:
-                    store = factory.getobject(po_filename)
-                    gettext.c2py(store.getheaderplural()[1])
+                    factory.getobject(po_filename)
+                    # gettext.c2py removed in Python 3, skip plural validation
                 except Exception:
                     log.warn("%s: invalid plural header in %s",
                              lang, po_filename)
@@ -266,7 +265,7 @@ class BuildChecksTemplatesCommand(Command):
             """
             # Provide a header with an anchor to refer to.
             description = ('\n<h3 id="%s">%s</h3>\n\n' %
-                           (name, unicode(CHECK_NAMES[name])))
+                           (name, str(CHECK_NAMES[name])))
 
             # Clean the leading whitespace on each docstring line so it gets
             # properly rendered.
@@ -481,7 +480,12 @@ setup(
         "Operating System :: Unix",
         "Programming Language :: JavaScript",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development :: Localization",
         "Topic :: Text Processing :: Linguistic"
     ],

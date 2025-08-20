@@ -1,0 +1,73 @@
+images:
+  - name: "econs-ds/econs-ds-saver-dd"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "Data saver service for economics data science"
+    tags: ["latest"]
+    
+  - name: "econs-ds/econs-ds-spark3"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "Apache Spark 3 environment for economics data science"
+    tags: ["latest"]
+    
+  - name: "econs-ds/econs-ds-user-profiling"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "User profiling service for economics data science"
+    tags: ["latest"]
+    
+  - name: "econs-ds/mpc-spatial-temporal-surge"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "Multi-party computation for spatial-temporal surge analysis"
+    tags: ["latest"]
+    
+  - name: "econs-ds/network-value-individual-surge"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "Network value analysis for individual surge patterns"
+    tags: ["latest"]
+    
+  - name: "econs-ds/transport-dax-bounding"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "Transport DAX bounding service"
+    tags: ["latest"]
+    
+  - name: "econs-ds/transport-fallback-surge"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "Transport fallback surge analysis"
+    tags: ["latest"]
+    
+  - name: "econs-ds/transport-surge-geohash-config"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "Transport surge geohash configuration service"
+    tags: ["latest"]
+    
+  - name: "ff-mle/rhps"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "RHPS machine learning service"
+    tags: ["latest"]
+    
+  - name: "ff-mle/rhps-analysis"
+    registry: "docker.io"
+    validation_type: ["build", "security", "functionality"]
+    description: "RHPS analysis service for machine learning"
+    tags: ["latest"]
+    
+  - name: "hello-world"
+    registry: "docker.io"
+    validation_type: ["build", "functionality"]
+    description: "Test image for validation framework verification"
+    tags: ["latest"]
+
+validation_config:
+  timeout_seconds: 300
+  parallel_jobs: 3
+  security_scan_tools: ["trivy", "docker-scout"]
+  build_platforms: ["linux/amd64", "linux/arm64"]
+  health_check_timeout: 60

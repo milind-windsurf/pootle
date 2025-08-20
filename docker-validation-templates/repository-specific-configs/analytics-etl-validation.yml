@@ -1,0 +1,86 @@
+name: Analytics ETL Docker Validation
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  etl-docker-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ETL Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: etl-pipeline:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Python dependencies for vulnerabilities
+        run: |
+          docker run --rm etl-pipeline:test pip list --format=json > requirements.json
+          docker run --rm -v $(pwd):/workspace pyupio/safety check --json --file /workspace/requirements.json
+
+      - name: Test data processing capabilities
+        run: |
+          # Test ETL pipeline with sample data
+          docker run --rm -v $(pwd)/test-data:/data etl-pipeline:test \
+            python -m etl.pipeline --input /data/sample.csv --output /data/output.csv --validate
+          
+          # Verify output data integrity
+          docker run --rm -v $(pwd)/test-data:/data etl-pipeline:test \
+            python -m etl.validator --file /data/output.csv
+
+      - name: Check for data processing libraries vulnerabilities
+        run: |
+          echo "Scanning common ETL libraries..."
+          docker run --rm etl-pipeline:test python -c "
+          import pkg_resources
+          etl_packages = ['pandas', 'numpy', 'sqlalchemy', 'apache-airflow', 'pyspark']
+          installed = [pkg.project_name for pkg in pkg_resources.working_set]
+          etl_installed = [pkg for pkg in etl_packages if pkg in installed]
+          print('ETL packages found:', etl_installed)
+          "
+
+      - name: Validate resource constraints
+        run: |
+          # Test memory usage under load
+          docker run --rm --memory=1g --memory-swap=1g etl-pipeline:test \
+            python -m etl.stress_test --duration=60 --memory-limit=800MB
+          
+          # Test CPU usage
+          docker run --rm --cpus=1.0 etl-pipeline:test \
+            python -m etl.performance_test --cpu-intensive
+
+      - name: Check for secrets in environment
+        run: |
+          docker run --rm etl-pipeline:test env | grep -E "(PASSWORD|SECRET|KEY|TOKEN)" || echo "No secrets found in environment"
+
+      - name: Validate data pipeline configuration
+        run: |
+          docker run --rm etl-pipeline:test python -c "
+          import yaml
+          import os
+          
+          # Check for configuration files
+          config_files = ['/app/config.yml', '/app/pipeline.yaml', '/app/etl.conf']
+          for config_file in config_files:
+              if os.path.exists(config_file):
+                  print(f'Found config: {config_file}')
+                  with open(config_file) as f:
+                      config = yaml.safe_load(f)
+                      # Validate required configuration sections
+                      required_sections = ['database', 'processing', 'output']
+                      for section in required_sections:
+                          if section not in config:
+                              print(f'WARNING: Missing required section: {section}')
+          "

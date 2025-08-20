@@ -1,0 +1,14 @@
+# Docker Images for Validation
+# This file contains the list of Docker images to validate
+# Lines starting with # are comments and will be ignored
+
+mobility/pytorch/pytorch-v2.0.1-cpu
+mobility/spark3
+notebook/hub
+notebook/singleuser
+olympus/aletheia
+olympus/spark-benchmark
+pie/decision-engine
+pie/decision-engine-spark34x
+pie/x-pipeline
+public-affairs/general

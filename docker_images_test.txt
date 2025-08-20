@@ -1,0 +1,10 @@
+ads-rnr/apt-ads-airflow-prod
+ads-rnr/apt-ads-airflow-prod-tf27
+ads-rnr/apt-ads-airflow-prod-tf29
+ads-rnr/apt-ads-dl-tf2
+ads-rnr/apt-ads-dl-tf25
+ads-rnr/apt-ads-dl-tf28
+ads-rnr/apt-ads-gai
+adw/adw-3.5-3.1
+adw/adw-external-gspread
+adw/adw-image-3.4

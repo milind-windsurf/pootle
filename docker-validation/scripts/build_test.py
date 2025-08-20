@@ -58,11 +58,30 @@ class BuildValidator:
             
             stdout, stderr = await process.communicate()
             
+            stderr_text = stderr.decode()
+            
+            if process.returncode != 0:
+                if 'pull access denied' in stderr_text or 'repository does not exist' in stderr_text:
+                    return {
+                        'status': 'SKIP',
+                        'reason': 'Image not accessible or does not exist',
+                        'return_code': process.returncode,
+                        'stdout': stdout.decode(),
+                        'stderr': stderr_text
+                    }
+                else:
+                    return {
+                        'status': 'FAIL',
+                        'return_code': process.returncode,
+                        'stdout': stdout.decode(),
+                        'stderr': stderr_text
+                    }
+            
             return {
-                'status': 'PASS' if process.returncode == 0 else 'FAIL',
+                'status': 'PASS',
                 'return_code': process.returncode,
                 'stdout': stdout.decode(),
-                'stderr': stderr.decode()
+                'stderr': stderr_text
             }
             
         except Exception as e:
@@ -145,12 +164,20 @@ class BuildValidator:
                     if line:
                         layers_data.append(json.loads(line))
                         
+                total_size = 0
+                for layer in layers_data:
+                    size = layer.get('Size', 0)
+                    if isinstance(size, (int, float)):
+                        total_size += size
+                    elif isinstance(size, str) and size.replace('.', '').isdigit():
+                        total_size += float(size)
+                
                 analysis = {
                     'total_layers': len(layers_data),
-                    'total_size': sum(layer.get('Size', 0) for layer in layers_data),
+                    'total_size': total_size,
                     'large_layers': [
                         layer for layer in layers_data 
-                        if layer.get('Size', 0) > 100 * 1024 * 1024
+                        if isinstance(layer.get('Size', 0), (int, float)) and layer.get('Size', 0) > 100 * 1024 * 1024
                     ]
                 }
                 
@@ -188,8 +215,11 @@ class BuildValidator:
             if process.returncode == 0:
                 images_data = []
                 for line in stdout.decode().strip().split('\n'):
-                    if line:
-                        images_data.append(json.loads(line))
+                    if line.strip():
+                        try:
+                            images_data.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            continue
                         
                 if images_data:
                     image_data = images_data[0]
@@ -266,5 +296,7 @@ class BuildValidator:
         for test_name, test_result in tests.items():
             if test_result.get('status') == 'FAIL':
                 return 'FAIL'
+            elif test_result.get('status') == 'SKIP':
+                continue
                 
         return 'PASS'

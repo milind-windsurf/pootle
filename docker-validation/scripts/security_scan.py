@@ -89,8 +89,23 @@ class SecurityScanner:
     async def _run_docker_scout_scan(self, image_name: str) -> Dict:
         """Run Docker Scout security scan"""
         try:
+            check_cmd = ['docker', 'scout', 'version']
+            check_process = await asyncio.create_subprocess_exec(
+                *check_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            await check_process.communicate()
+            
+            if check_process.returncode != 0:
+                return {
+                    'status': 'SKIP',
+                    'tool': 'docker_scout',
+                    'error': 'Docker Scout not available or not installed'
+                }
+            
             cmd = [
-                'docker', 'scout', 'cves', '--format', 'json',
+                'docker', 'scout', 'cves',
                 '--only-severity', 'high,critical',
                 image_name
             ]

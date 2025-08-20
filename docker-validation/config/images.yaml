@@ -58,6 +58,12 @@ images:
     validation_type: ["build", "security", "functionality"]
     description: "RHPS analysis service for machine learning"
     tags: ["latest"]
+    
+  - name: "hello-world"
+    registry: "docker.io"
+    validation_type: ["build", "functionality"]
+    description: "Test image for validation framework verification"
+    tags: ["latest"]
 
 validation_config:
   timeout_seconds: 300

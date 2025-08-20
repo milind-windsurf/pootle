@@ -1,0 +1,230 @@
+name: Ad-Serving Docker Validation
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ad-serving-docker-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Ad-Serving Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: ad-serving:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test high-throughput performance
+        run: |
+          echo "Starting performance tests for ad-serving..."
+          
+          # Start the ad-serving container
+          docker run -d --name ad-serving-test -p 8080:8080 ad-serving:test
+          
+          # Wait for service to be ready
+          sleep 10
+          
+          # Run load testing
+          docker run --rm --network container:ad-serving-test \
+            loadimpact/k6:latest run - <<EOF
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          
+          export let options = {
+            stages: [
+              { duration: '30s', target: 100 },
+              { duration: '1m', target: 500 },
+              { duration: '30s', target: 0 },
+            ],
+          };
+          
+          export default function() {
+            let response = http.get('http://localhost:8080/ads/serve');
+            check(response, {
+              'status is 200': (r) => r.status === 200,
+              'response time < 100ms': (r) => r.timings.duration < 100,
+            });
+            sleep(0.1);
+          }
+          EOF
+          
+          # Stop the container
+          docker stop ad-serving-test
+          docker rm ad-serving-test
+
+      - name: API security scanning (OWASP ZAP)
+        run: |
+          # Start the ad-serving container for security testing
+          docker run -d --name ad-serving-security -p 8080:8080 ad-serving:test
+          sleep 10
+          
+          # Run OWASP ZAP baseline scan
+          docker run --rm --network container:ad-serving-security \
+            owasp/zap2docker-stable zap-baseline.py \
+            -t http://localhost:8080 \
+            -J zap-report.json \
+            -r zap-report.html || true
+          
+          # Stop the container
+          docker stop ad-serving-security
+          docker rm ad-serving-security
+
+      - name: Validate data privacy compliance
+        run: |
+          echo "Checking for data privacy compliance..."
+          
+          # Check for PII handling in code
+          docker run --rm ad-serving:test find /app -name "*.py" -o -name "*.js" -o -name "*.java" | \
+            xargs grep -l -i "email\|phone\|address\|ssn\|credit.*card" || echo "No obvious PII handling found"
+          
+          # Check for GDPR compliance markers
+          docker run --rm ad-serving:test find /app -name "*.py" -o -name "*.js" -o -name "*.java" | \
+            xargs grep -l -i "gdpr\|consent\|privacy\|anonymize" || echo "No GDPR compliance markers found"
+
+      - name: Test response time benchmarks
+        run: |
+          echo "Testing response time benchmarks..."
+          
+          # Start container for benchmarking
+          docker run -d --name ad-serving-bench -p 8080:8080 ad-serving:test
+          sleep 10
+          
+          # Test various endpoints for response time
+          endpoints=("/ads/serve" "/health" "/metrics" "/ads/click" "/ads/impression")
+          
+          for endpoint in "${endpoints[@]}"; do
+            echo "Testing endpoint: $endpoint"
+            
+            # Use curl to measure response time
+            response_time=$(docker run --rm --network container:ad-serving-bench \
+              curlimages/curl:latest -w "%{time_total}" -s -o /dev/null \
+              http://localhost:8080$endpoint)
+            
+            echo "Response time for $endpoint: ${response_time}s"
+            
+            # Check if response time is acceptable (< 0.1s for ad serving)
+            if (( $(echo "$response_time > 0.1" | bc -l) )); then
+              echo "WARNING: Response time for $endpoint exceeds 100ms threshold"
+            else
+              echo "PASS: Response time for $endpoint within acceptable limits"
+            fi
+          done
+          
+          # Stop the container
+          docker stop ad-serving-bench
+          docker rm ad-serving-bench
+
+      - name: Memory leak detection
+        run: |
+          echo "Running memory leak detection..."
+          
+          # Start container with memory monitoring
+          docker run -d --name ad-serving-memory --memory=512m ad-serving:test
+          
+          # Monitor memory usage over time
+          for i in {1..10}; do
+            memory_usage=$(docker stats ad-serving-memory --no-stream --format "{{.MemUsage}}")
+            echo "Memory usage iteration $i: $memory_usage"
+            sleep 30
+          done
+          
+          # Stop the container
+          docker stop ad-serving-memory
+          docker rm ad-serving-memory
+
+      - name: Validate ad-serving specific dependencies
+        run: |
+          echo "Validating ad-serving dependencies..."
+          
+          # Check for common ad-serving libraries and their versions
+          docker run --rm ad-serving:test python -c "
+          import pkg_resources
+          
+          ad_serving_packages = [
+              'flask', 'fastapi', 'redis', 'celery', 'requests',
+              'numpy', 'pandas', 'scikit-learn', 'kafka-python'
+          ]
+          
+          installed = {pkg.project_name.lower(): pkg.version for pkg in pkg_resources.working_set}
+          
+          print('Ad-serving dependencies:')
+          for package in ad_serving_packages:
+              if package.lower() in installed:
+                  print(f'  {package}: {installed[package.lower()]}')
+              else:
+                  print(f'  {package}: NOT INSTALLED')
+          
+          # Check for known vulnerable versions
+          vulnerable_versions = {
+              'flask': ['1.0.0', '1.0.1', '1.0.2'],
+              'requests': ['2.19.0', '2.19.1']
+          }
+          
+          for package, versions in vulnerable_versions.items():
+              if package.lower() in installed and installed[package.lower()] in versions:
+                  print(f'WARNING: {package} version {installed[package.lower()]} has known vulnerabilities')
+          "
+
+      - name: Test real-time processing capabilities
+        run: |
+          echo "Testing real-time processing capabilities..."
+          
+          # Start container for real-time testing
+          docker run -d --name ad-serving-realtime -p 8080:8080 -p 6379:6379 ad-serving:test
+          sleep 10
+          
+          # Test concurrent request handling
+          docker run --rm --network container:ad-serving-realtime \
+            alpine/curl:latest sh -c '
+            for i in $(seq 1 100); do
+              curl -s http://localhost:8080/ads/serve &
+            done
+            wait
+            echo "Completed 100 concurrent requests"
+            '
+          
+          # Test streaming capabilities if available
+          docker run --rm --network container:ad-serving-realtime \
+            alpine/curl:latest curl -s http://localhost:8080/stream/ads || echo "Streaming endpoint not available"
+          
+          # Stop the container
+          docker stop ad-serving-realtime
+          docker rm ad-serving-realtime
+
+      - name: Validate configuration security
+        run: |
+          echo "Validating configuration security..."
+          
+          # Check for secure configuration practices
+          docker run --rm ad-serving:test sh -c '
+          # Check for configuration files
+          config_files=$(find /app -name "*.conf" -o -name "*.ini" -o -name "*.yaml" -o -name "*.yml" -o -name "*.json")
+          
+          if [ -n "$config_files" ]; then
+            echo "Found configuration files:"
+            echo "$config_files"
+            
+            # Check for hardcoded secrets in config files
+            for file in $config_files; do
+              if grep -i "password\|secret\|key\|token" "$file" 2>/dev/null; then
+                echo "WARNING: Potential secrets found in $file"
+              fi
+            done
+          else
+            echo "No configuration files found"
+          fi
+          
+          # Check environment variables for secrets
+          env | grep -i "password\|secret\|key\|token" || echo "No secrets found in environment variables"
+          '

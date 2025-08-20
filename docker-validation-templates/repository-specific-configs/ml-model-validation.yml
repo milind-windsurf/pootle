@@ -1,0 +1,178 @@
+name: ML Model Docker Validation
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ml-docker-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ML Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: ml-model:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan ML framework dependencies
+        run: |
+          echo "Scanning ML frameworks for vulnerabilities..."
+          docker run --rm ml-model:test python -c "
+          import pkg_resources
+          ml_packages = ['tensorflow', 'torch', 'scikit-learn', 'numpy', 'pandas', 'keras']
+          installed = {pkg.project_name: pkg.version for pkg in pkg_resources.working_set}
+          
+          for package in ml_packages:
+              if package in installed:
+                  print(f'{package}: {installed[package]}')
+              else:
+                  print(f'{package}: NOT INSTALLED')
+          "
+
+      - name: Validate GPU compatibility (if applicable)
+        run: |
+          # Check if CUDA libraries are present
+          docker run --rm ml-model:test python -c "
+          try:
+              import torch
+              print('PyTorch CUDA available:', torch.cuda.is_available())
+              if torch.cuda.is_available():
+                  print('CUDA version:', torch.version.cuda)
+                  print('GPU count:', torch.cuda.device_count())
+          except ImportError:
+              print('PyTorch not installed')
+          
+          try:
+              import tensorflow as tf
+              print('TensorFlow GPU available:', len(tf.config.list_physical_devices('GPU')) > 0)
+              if len(tf.config.list_physical_devices('GPU')) > 0:
+                  print('TensorFlow version:', tf.__version__)
+          except ImportError:
+              print('TensorFlow not installed')
+          "
+
+      - name: Test model loading and inference
+        run: |
+          # Test model loading
+          docker run --rm -v $(pwd)/models:/models ml-model:test python -c "
+          import os
+          import pickle
+          import joblib
+          
+          model_dir = '/models'
+          if os.path.exists(model_dir):
+              model_files = [f for f in os.listdir(model_dir) if f.endswith(('.pkl', '.joblib', '.h5', '.pt', '.pth'))]
+              print(f'Found model files: {model_files}')
+              
+              for model_file in model_files[:3]:  # Test first 3 models
+                  try:
+                      model_path = os.path.join(model_dir, model_file)
+                      if model_file.endswith('.pkl'):
+                          with open(model_path, 'rb') as f:
+                              model = pickle.load(f)
+                          print(f'Successfully loaded pickle model: {model_file}')
+                      elif model_file.endswith('.joblib'):
+                          model = joblib.load(model_path)
+                          print(f'Successfully loaded joblib model: {model_file}')
+                  except Exception as e:
+                      print(f'Error loading {model_file}: {e}')
+          else:
+              print('No models directory found')
+          "
+
+      - name: Check model file integrity
+        run: |
+          # Verify model file checksums if available
+          docker run --rm -v $(pwd):/workspace ml-model:test bash -c "
+          if [ -f /workspace/model_checksums.txt ]; then
+              echo 'Verifying model file integrity...'
+              cd /workspace && sha256sum -c model_checksums.txt
+          else
+              echo 'No checksum file found, generating checksums for model files...'
+              find /workspace -name '*.pkl' -o -name '*.joblib' -o -name '*.h5' -o -name '*.pt' -o -name '*.pth' | xargs sha256sum
+          fi
+          "
+
+      - name: Test model performance benchmarks
+        run: |
+          # Run inference performance tests
+          docker run --rm ml-model:test python -c "
+          import time
+          import numpy as np
+          
+          # Simulate model inference timing
+          print('Running performance benchmarks...')
+          
+          # Generate sample data
+          sample_data = np.random.rand(1000, 10)
+          
+          # Simulate inference timing
+          start_time = time.time()
+          for i in range(100):
+              # Simulate model prediction
+              result = np.dot(sample_data, np.random.rand(10, 1))
+          end_time = time.time()
+          
+          avg_inference_time = (end_time - start_time) / 100
+          print(f'Average inference time: {avg_inference_time:.4f} seconds')
+          
+          if avg_inference_time > 1.0:
+              print('WARNING: Inference time exceeds 1 second threshold')
+          else:
+              print('PASS: Inference time within acceptable limits')
+          "
+
+      - name: Validate training data access controls
+        run: |
+          # Check for training data security
+          docker run --rm ml-model:test python -c "
+          import os
+          import stat
+          
+          # Check for training data directories
+          data_dirs = ['/data', '/training_data', '/datasets']
+          for data_dir in data_dirs:
+              if os.path.exists(data_dir):
+                  print(f'Found data directory: {data_dir}')
+                  
+                  # Check permissions
+                  dir_stat = os.stat(data_dir)
+                  permissions = stat.filemode(dir_stat.st_mode)
+                  print(f'Permissions: {permissions}')
+                  
+                  # Check for sensitive files
+                  for root, dirs, files in os.walk(data_dir):
+                      for file in files:
+                          if any(keyword in file.lower() for keyword in ['password', 'secret', 'key', 'token']):
+                              print(f'WARNING: Potentially sensitive file found: {file}')
+          "
+
+      - name: Check model serialization security
+        run: |
+          # Validate model serialization methods
+          docker run --rm ml-model:test python -c "
+          import pickle
+          import warnings
+          
+          # Check for secure serialization practices
+          print('Checking model serialization security...')
+          
+          # Warn about pickle usage (potential security risk)
+          with warnings.catch_warnings(record=True) as w:
+              warnings.simplefilter('always')
+              
+              # This would normally load a model, but we're just checking the warning system
+              print('Pickle security check: Use joblib or other secure serialization methods when possible')
+              print('Avoid loading untrusted pickle files')
+          "

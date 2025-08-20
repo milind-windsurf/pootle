@@ -1,0 +1,284 @@
+name: Infrastructure Docker Validation
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  infrastructure-docker-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Infrastructure Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: infrastructure:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Validate Airflow DAG security (if Airflow)
+        run: |
+          echo "Validating Airflow DAG security..."
+          
+          # Check if this is an Airflow repository
+          if docker run --rm infrastructure:test which airflow >/dev/null 2>&1; then
+            echo "Airflow detected, running DAG validation..."
+            
+            # Test DAG parsing
+            docker run --rm infrastructure:test airflow dags list || echo "No DAGs found or parsing failed"
+            
+            # Check for DAG security issues
+            docker run --rm infrastructure:test find /opt/airflow/dags -name "*.py" | \
+              xargs grep -l "BashOperator\|PythonOperator" | \
+              head -5 | \
+              while read dag_file; do
+                echo "Checking DAG file: $dag_file"
+                
+                # Check for dangerous operations
+                if grep -q "rm -rf\|sudo\|chmod 777" "$dag_file" 2>/dev/null; then
+                  echo "WARNING: Potentially dangerous operations found in $dag_file"
+                fi
+                
+                # Check for hardcoded credentials
+                if grep -i "password\|secret\|key.*=" "$dag_file" 2>/dev/null; then
+                  echo "WARNING: Potential hardcoded credentials in $dag_file"
+                fi
+              done
+          else
+            echo "Not an Airflow repository, skipping DAG validation"
+          fi
+
+      - name: Test container orchestration
+        run: |
+          echo "Testing container orchestration capabilities..."
+          
+          # Test multi-container setup if docker-compose is available
+          if docker run --rm infrastructure:test which docker-compose >/dev/null 2>&1; then
+            echo "Docker Compose detected, testing orchestration..."
+            
+            # Copy docker-compose file if it exists
+            if [ -f docker-compose.yml ]; then
+              docker run --rm -v $(pwd):/workspace infrastructure:test \
+                docker-compose -f /workspace/docker-compose.yml config --quiet && \
+                echo "Docker Compose configuration is valid" || \
+                echo "Docker Compose configuration has issues"
+            fi
+          fi
+          
+          # Test Kubernetes manifests if present
+          if [ -d k8s ] || [ -d kubernetes ]; then
+            echo "Kubernetes manifests detected, validating..."
+            
+            # Install kubeval for validation
+            docker run --rm -v $(pwd):/workspace \
+              garethr/kubeval:latest /workspace/k8s/*.yaml || \
+              docker run --rm -v $(pwd):/workspace \
+              garethr/kubeval:latest /workspace/kubernetes/*.yaml || \
+              echo "No valid Kubernetes manifests found"
+          fi
+
+      - name: Validate network policies
+        run: |
+          echo "Validating network policies..."
+          
+          # Check for network configuration
+          docker run --rm infrastructure:test sh -c '
+          # Check for network-related configuration
+          if [ -f /etc/nginx/nginx.conf ]; then
+            echo "Nginx configuration found, checking security headers..."
+            
+            # Check for security headers
+            if grep -q "add_header.*X-Frame-Options" /etc/nginx/nginx.conf; then
+              echo "✓ X-Frame-Options header configured"
+            else
+              echo "⚠ X-Frame-Options header missing"
+            fi
+            
+            if grep -q "add_header.*X-Content-Type-Options" /etc/nginx/nginx.conf; then
+              echo "✓ X-Content-Type-Options header configured"
+            else
+              echo "⚠ X-Content-Type-Options header missing"
+            fi
+            
+            if grep -q "add_header.*Strict-Transport-Security" /etc/nginx/nginx.conf; then
+              echo "✓ HSTS header configured"
+            else
+              echo "⚠ HSTS header missing"
+            fi
+          fi
+          
+          # Check for firewall rules
+          if command -v iptables >/dev/null 2>&1; then
+            echo "Checking iptables rules..."
+            iptables -L -n || echo "Cannot access iptables (expected in container)"
+          fi
+          '
+
+      - name: Test service discovery
+        run: |
+          echo "Testing service discovery capabilities..."
+          
+          # Test DNS resolution
+          docker run --rm infrastructure:test nslookup google.com || \
+            docker run --rm infrastructure:test dig google.com || \
+            echo "DNS resolution test completed"
+          
+          # Test service mesh compatibility (if Istio/Linkerd configs present)
+          if [ -f istio.yaml ] || [ -f linkerd.yaml ]; then
+            echo "Service mesh configuration detected"
+            
+            # Validate Istio configuration
+            if [ -f istio.yaml ]; then
+              docker run --rm -v $(pwd):/workspace \
+                istio/pilot:latest pilot-discovery validate /workspace/istio.yaml || \
+                echo "Istio configuration validation completed"
+            fi
+          fi
+
+      - name: Validate monitoring integration
+        run: |
+          echo "Validating monitoring and logging integration..."
+          
+          # Check for monitoring endpoints
+          docker run -d --name infra-monitoring -p 8080:8080 infrastructure:test
+          sleep 10
+          
+          # Test common monitoring endpoints
+          monitoring_endpoints=("/health" "/metrics" "/ready" "/live" "/status")
+          
+          for endpoint in "${monitoring_endpoints[@]}"; do
+            echo "Testing monitoring endpoint: $endpoint"
+            
+            response=$(docker run --rm --network container:infra-monitoring \
+              curlimages/curl:latest -s -o /dev/null -w "%{http_code}" \
+              http://localhost:8080$endpoint)
+            
+            if [ "$response" = "200" ]; then
+              echo "✓ $endpoint is accessible"
+            else
+              echo "⚠ $endpoint returned status: $response"
+            fi
+          done
+          
+          # Check for logging configuration
+          docker run --rm infrastructure:test sh -c '
+          # Check for common logging configurations
+          log_configs=("/etc/rsyslog.conf" "/etc/syslog-ng/syslog-ng.conf" "/etc/fluentd/fluent.conf")
+          
+          for config in "${log_configs[@]}"; do
+            if [ -f "$config" ]; then
+              echo "Found logging configuration: $config"
+            fi
+          done
+          
+          # Check for application logging
+          if [ -d /var/log ]; then
+            echo "Log directory contents:"
+            ls -la /var/log/ | head -10
+          fi
+          '
+          
+          # Stop the container
+          docker stop infra-monitoring
+          docker rm infra-monitoring
+
+      - name: Test backup and recovery procedures
+        run: |
+          echo "Testing backup and recovery procedures..."
+          
+          # Check for backup scripts
+          docker run --rm infrastructure:test find /app -name "*backup*" -o -name "*restore*" | \
+            head -5 | \
+            while read backup_file; do
+              echo "Found backup/restore file: $backup_file"
+              
+              # Check if it's executable
+              if [ -x "$backup_file" ]; then
+                echo "✓ $backup_file is executable"
+              else
+                echo "⚠ $backup_file is not executable"
+              fi
+            done
+          
+          # Test database backup procedures (if database is present)
+          if docker run --rm infrastructure:test which pg_dump >/dev/null 2>&1; then
+            echo "PostgreSQL tools detected, testing backup capability..."
+            docker run --rm infrastructure:test pg_dump --version
+          fi
+          
+          if docker run --rm infrastructure:test which mysqldump >/dev/null 2>&1; then
+            echo "MySQL tools detected, testing backup capability..."
+            docker run --rm infrastructure:test mysqldump --version
+          fi
+
+      - name: Validate infrastructure as code
+        run: |
+          echo "Validating Infrastructure as Code..."
+          
+          # Check for Terraform files
+          if [ -f main.tf ] || [ -f *.tf ]; then
+            echo "Terraform files detected, validating..."
+            
+            docker run --rm -v $(pwd):/workspace \
+              hashicorp/terraform:latest -chdir=/workspace init -backend=false
+            
+            docker run --rm -v $(pwd):/workspace \
+              hashicorp/terraform:latest -chdir=/workspace validate
+          fi
+          
+          # Check for Ansible playbooks
+          if [ -f playbook.yml ] || [ -f site.yml ]; then
+            echo "Ansible playbooks detected, validating..."
+            
+            docker run --rm -v $(pwd):/workspace \
+              ansible/ansible:latest ansible-playbook --syntax-check /workspace/playbook.yml || \
+              docker run --rm -v $(pwd):/workspace \
+              ansible/ansible:latest ansible-playbook --syntax-check /workspace/site.yml || \
+              echo "Ansible validation completed"
+          fi
+          
+          # Check for Helm charts
+          if [ -d charts ] || [ -f Chart.yaml ]; then
+            echo "Helm charts detected, validating..."
+            
+            docker run --rm -v $(pwd):/workspace \
+              alpine/helm:latest lint /workspace || \
+              echo "Helm chart validation completed"
+          fi
+
+      - name: Security compliance check
+        run: |
+          echo "Running security compliance checks..."
+          
+          # Check for security scanning tools integration
+          docker run --rm infrastructure:test sh -c '
+          # Check for security tools
+          security_tools=("trivy" "grype" "syft" "cosign")
+          
+          for tool in "${security_tools[@]}"; do
+            if command -v "$tool" >/dev/null 2>&1; then
+              echo "✓ Security tool found: $tool"
+              "$tool" --version 2>/dev/null || echo "Version check failed for $tool"
+            else
+              echo "⚠ Security tool not found: $tool"
+            fi
+          done
+          
+          # Check for compliance frameworks
+          compliance_files=("cis-benchmark.yaml" "nist-framework.json" "pci-dss.conf")
+          
+          for file in "${compliance_files[@]}"; do
+            if [ -f "/app/$file" ]; then
+              echo "✓ Compliance configuration found: $file"
+            fi
+          done
+          '

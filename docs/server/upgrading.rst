@@ -65,10 +65,10 @@ You should check that you have all of the necessary :ref:`Pootle requirements
 
 .. warning::
 
-   Pootle 2.7.0 or newer requires **Python 2.7**
+   Pootle requires **Python 3.7 or later**
 
-   If you are upgrading from a virtual environment using an earlier Python
-   version, you **must** upgrade or rebuild your virtual environment first.
+   If you are upgrading from a virtual environment using Python 2.7,
+   you **must** upgrade or rebuild your virtual environment first.
 
 
 .. _upgrading#activte-virtualenv:

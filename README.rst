@@ -41,7 +41,7 @@ on-line.  Files can be downloaded for offline translation.
 Installation
 ------------
 
-⚠️ Only works with Python2
+Requires Python 3.7 or later.
 
 ::
 

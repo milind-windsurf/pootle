@@ -9,8 +9,6 @@
 import io
 import os
 
-import six
-
 import pytest
 
 from pytest_pootle.factories import (
@@ -869,9 +867,7 @@ def test_store_po_serializer_custom(test_fs, store_po):
 
     store_po.serialize()
     assert checker.context == store_po
-    assert (
-        not isinstance(checker.original_data, six.text_type)
-        and isinstance(checker.original_data, str))
+    assert isinstance(checker.original_data, (str, bytes))
     assert checker.original_data == _store_as_string(store_po)
 
 

@@ -22,7 +22,7 @@ class StoreData(AbstractPootleData):
         db_index=True,
         related_name="data")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.store.pootle_path
 
 
@@ -39,7 +39,7 @@ class StoreChecksData(AbstractPootleChecksData):
         db_index=False,
         related_name="check_data")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.store.pootle_path
 
 
@@ -54,7 +54,7 @@ class TPData(AbstractPootleData):
         db_index=True,
         related_name="data")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.tp.pootle_path
 
 
@@ -71,5 +71,5 @@ class TPChecksData(AbstractPootleChecksData):
         db_index=False,
         related_name="check_data")
 
-    def __unicode__(self):
+    def __str__(self):
         return self.tp.pootle_path

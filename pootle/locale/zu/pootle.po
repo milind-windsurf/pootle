@@ -1680,15 +1680,11 @@ msgid "MySQL requires time zone settings."
 msgstr ""
 
 #: checks.py:593
-msgid "Pootle does not yet support Python 3."
+msgid "Pootle requires Python 3.7 or later."
 msgstr ""
 
-#: checks.py:594 checks.py:600
-msgid "Use a Python 2.7 virtualenv."
-msgstr ""
-
-#: checks.py:599
-msgid "Pootle no longer supports Python versions older than 2.7"
+#: checks.py:594
+msgid "Use a Python 3.7+ virtualenv."
 msgstr ""
 
 #. Translators: noun. The graphical representation of translation status

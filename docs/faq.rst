@@ -12,20 +12,12 @@ Installation
 Does Pootle run under Python 3?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Pootle does not, yet, support Python 3 but it definitely is a goal.
+Yes! As of version 3.0, Pootle requires Python 3.7 or later.
 
-Our first priority has been cleaning up the code and getting onto the latest
-version of Django.  We've achieved that with Pootle 2.8.0.
+Pootle 2.8.x was the last version to support Python 2.7, which reached 
+end-of-life in January 2020.
 
-We also want to be Django warning free, we've also achieved that in Pootle
-2.8.0.
-
-All of these where needed to ease to migration to Python 3.
-
-Currently, we're trying to eliminate Python 2 specific changes and we're coding
-pylint checks to prevent any regression.
-
-If you want to help make this happen sooner, patches are welcome.
+If you need to run on Python 2.7, please use Pootle 2.8.x.
 
 
 ModuleNotFoundError: No module named 'syspath_override'

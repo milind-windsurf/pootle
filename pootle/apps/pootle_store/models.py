@@ -72,7 +72,7 @@ class QualityCheck(AbstractQualityCheck):
         abstract = False
         db_table = "pootle_store_qualitycheck"
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @property
@@ -141,8 +141,8 @@ class Suggestion(AbstractSuggestion):
 
     # # # # # # # # # # # # # #  Methods # # # # # # # # # # # # # # # # # # #
 
-    def __unicode__(self):
-        return unicode(self.target)
+    def __str__(self):
+        return str(self.target)
 
 
 # # # # # # # # Unit # # # # # # # # # #
@@ -211,10 +211,6 @@ class Unit(AbstractUnit):
         return max_column(cls.objects.all(), 'revision', 0)
 
     # # # # # # # # # # # # # #  Methods # # # # # # # # # # # # # # # # # # #
-
-    def __unicode__(self):
-        # FIXME: consider using unit id instead?
-        return unicode(self.source)
 
     def __str__(self):
         return str(self.convert())
@@ -340,7 +336,7 @@ class Unit(AbstractUnit):
         return (
             "%s%s"
             % (self.store.get_translate_url(),
-               '#unit=%s' % unicode(self.id)))
+               '#unit=%s' % str(self.id)))
 
     def get_search_locations_url(self):
         (proj_code, dir_path,
@@ -503,7 +499,7 @@ class Unit(AbstractUnit):
 
         # this is problematic - it compares getid, but then sets getid *or* source
         if self.unitid != unit.getid():
-            self.unitid = unicode(unit.getid()) or unicode(unit.source)
+            self.unitid = str(unit.getid()) or str(unit.source)
             self.unitid_hash = md5(force_bytes(self.unitid)).hexdigest()
             changed = True
 
@@ -832,9 +828,6 @@ class Store(AbstractStore):
     def __init__(self, *args, **kwargs):
         super(Store, self).__init__(*args, **kwargs)
 
-    def __unicode__(self):
-        return unicode(self.pootle_path)
-
     def __str__(self):
         return str(self.syncer.convert())
 
@@ -913,7 +906,7 @@ class Store(AbstractStore):
 
     def findid_bulk(self, ids, unit_set=None):
         chunks = 200
-        for i in xrange(0, len(ids), chunks):
+        for i in range(0, len(ids), chunks):
             units = (unit_set or self.unit_set).filter(id__in=ids[i:i+chunks])
             for unit in units.iterator():
                 yield unit

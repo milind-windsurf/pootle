@@ -90,7 +90,7 @@ class TranslationProjectForm(forms.ModelForm):
             project = kwargs["instance"].project
             language = kwargs["instance"].language
             mappings = project.config.get("pootle.core.lang_mapping", {})
-            mappings = dict((v, k) for k, v in mappings.iteritems())
+            mappings = dict((v, k) for k, v in mappings.items())
             mapped = mappings.get(language.code)
             self.fields["fs_code"].initial = mapped
         else:
@@ -143,7 +143,7 @@ class TranslationProjectForm(forms.ModelForm):
         else:
             mappings[tp.language.code] = self.cleaned_data["fs_code"]
         config["pootle.core.lang_mapping"] = dict(
-            (v, k) for k, v in mappings.iteritems())
+            (v, k) for k, v in mappings.items())
         if initialize_from_templates:
             def _enqueue_job():
                 queue = get_queue('default')

@@ -266,7 +266,7 @@ class BuildChecksTemplatesCommand(Command):
             """
             # Provide a header with an anchor to refer to.
             description = ('\n<h3 id="%s">%s</h3>\n\n' %
-                           (name, unicode(CHECK_NAMES[name])))
+                           (name, str(CHECK_NAMES[name])))
 
             # Clean the leading whitespace on each docstring line so it gets
             # properly rendered.
@@ -481,7 +481,11 @@ setup(
         "Operating System :: Unix",
         "Programming Language :: JavaScript",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Software Development :: Localization",
         "Topic :: Text Processing :: Linguistic"
     ],
